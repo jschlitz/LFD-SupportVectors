@@ -13,12 +13,44 @@ namespace LFD_SupportVectors
     static void Main(string[] args)
     {
       //var wTarget = new[] { GetR(), GetR() };
-      var wTarget = new[] {0.0, -0.09, 0.99 };
+      var wTarget = new[] {-0.5, 0.2, 0.9 };
 
       var classified = Generate(1000, wTarget);
       Console.WriteLine("{0} : {1}", classified.Count(t => t.Item2 > 0), classified.Count(t => t.Item2 <= 0));
+
+      var wPla = DoPla(new[] { 0.0, 0.0, 0.0}, classified);
+
+      Console.WriteLine("{0} - {1}", vToStr(wPla), vToStr(Norm(wPla)));
+
       Console.ReadKey(true);
     }
+
+    private static string vToStr(double[] wPla)
+    {
+      return "{" + wPla.Select(x => x.ToString("f3") + " ").Aggregate((acc, s) => acc + s) + "}";
+    }    
+
+    private static double[] Norm(double[] wPla)
+    {
+      var mag = Math.Sqrt( wPla.Sum(x=>x*x));
+      return wPla.Select(x => x / mag).ToArray();
+    }
+
+    private static double[] DoPla(double[] w, Tuple<double[], double>[] classified)
+    {
+      var misclassified = classified.Where(t => GetY(w, t.Item1) != t.Item2).ToArray();
+      Console.WriteLine("{0} misclassified.", misclassified.Length);
+      if (misclassified.Length == 0)
+        return w;
+      else
+        return DoPla(NextW(w, misclassified[R.Next(misclassified.Length)]), classified);
+    }
+
+    private static double[] NextW(double[] w, Tuple<double[], double> wrong)
+    {
+      return w.Zip(wrong.Item1, (wn, xn) => wn + xn * wrong.Item2).ToArray();
+    }
+
 
     private static Tuple<double[], double>[] Generate(int count, double[] w)
     {
