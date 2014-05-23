@@ -15,19 +15,28 @@ namespace LFD_SupportVectors
       //var wTarget = new[] { GetR(), GetR() };
       var wTarget = new[] {-0.5, 0.2, 0.9 };
 
-      var classified = Generate(1000, wTarget);
+      const int TRIALS = 1000;
+      var classified = Generate(TRIALS, wTarget);
       Console.WriteLine("{0} : {1}", classified.Count(t => t.Item2 > 0), classified.Count(t => t.Item2 <= 0));
 
       var wPla = DoPla(new[] { 0.0, 0.0, 0.0}, classified);
+      Console.WriteLine();
 
       Console.WriteLine("{0} - {1}", vToStr(wPla), vToStr(Norm(wPla)));
+      wPla = Norm(wPla);
+
+      //test it.
+      var testData = Generate(TRIALS*10, wTarget).ToArray();
+      var wrong = testData.Where(t => GetY(wPla, t.Item1) != t.Item2).ToArray().Count();
+      Console.WriteLine("{0}% wrong.", 100.0 * wrong / testData.Length);
+
 
       Console.ReadKey(true);
     }
 
     private static string vToStr(double[] wPla)
     {
-      return "{" + wPla.Select(x => x.ToString("f3") + " ").Aggregate((acc, s) => acc + s) + "}";
+      return "{" + wPla.Select(x => x.ToString("f3") + " ").Aggregate( (acc, s) => acc + s) + "}";
     }    
 
     private static double[] Norm(double[] wPla)
@@ -39,7 +48,8 @@ namespace LFD_SupportVectors
     private static double[] DoPla(double[] w, Tuple<double[], double>[] classified)
     {
       var misclassified = classified.Where(t => GetY(w, t.Item1) != t.Item2).ToArray();
-      Console.WriteLine("{0} misclassified.", misclassified.Length);
+      //Console.WriteLine("{0} misclassified.", misclassified.Length);
+      Console.Write(".");
       if (misclassified.Length == 0)
         return w;
       else
