@@ -31,21 +31,70 @@ namespace LFD_SupportVectors
       //Console.WriteLine("{0} : {1}", classified.Count(t => t.Item2 > 0), classified.Count(t => t.Item2 <= 0));
 
       Console.WriteLine("{0}% wrong.", GetWithPla(wTarget, classified)*100);
+
+      DoSv(classified);
+      
       
       Console.ReadKey(true);
     }
 
-    public double[,] GetQ(IEnumerable<Tuple<double[], double>> classified)
+    private static void DoSv(Tuple<double[], double>[] classified)
     {
       var stripped = classified.Select(t => new Tuple<double[], double>(t.Item1.Skip(1).ToArray(), t.Item2))
         .ToArray();
+      var q = GetQ(stripped);
+
+      //all are 0 or more
+      var lcc = new LinearConstraintCollection(
+        Enumerable.Range(0, stripped.Length)
+          .Select(i => new LinearConstraint(1)
+          {
+            VariablesAtIndices = new[] { i },
+            ShouldBe = ConstraintType.GreaterThanOrEqualTo,
+            Value = 0
+          }));
+      //and they zero out with the classificaiton
+      lcc.Add(
+        new LinearConstraint(stripped.Select(t => t.Item2).ToArray()) { Value = 0, ShouldBe = ConstraintType.EqualTo }
+        );
+
+      var solver = new GoldfarbIdnaniQuadraticSolver(stripped.Length, lcc);
+      solver.Minimize(q, neg1Array(stripped.Length));
+      //b  = 1/y - w_*x_ 
+
+      var tmp = solver.Solution.Zip(stripped, (alpha, s) => s.Item1.Select(x => x * alpha * s.Item2))
+        .Aggregate(VAdd).ToList();
+      var offset = GetOffset(stripped[0], tmp); //I'm pretty sure this calculation for b is wrong: you get a different one for each of elements...
+      tmp.Insert(0, offset);
+      var wSupp = Norm( tmp.ToArray());
+
+
+    }
+
+    private static double GetOffset(Tuple<double[], double> stripped, List<double> tmp)
+    {
+      return 1 / stripped.Item2 - Dot(tmp.ToArray(), stripped.Item1);
+    }
+    private static double[] VAdd(IEnumerable<double> x, IEnumerable<double> y)
+    {
+      return x.Zip(y, (xn, yn) => xn + yn).ToArray();
+    }
+
+    private static double[] neg1Array(int length)
+    {
+      return Enumerable.Range(1, length).Select(_ => -1.0).ToArray();
+    }
+    
+
+    public static double[,] GetQ(Tuple<double[], double>[] stripped)
+    {
       var result = new double[stripped.Length, stripped.Length];
       for (int r = 0; r < stripped.Length; r++)
       {
         for (int c = 0; c < stripped.Length; c++)
         {
           //TODO: do I have to multiply x2 on the diagonal?
-          result[r, c] = stripped[r].Item2 * stripped[c].Item2 * Dot(stripped[r].Item1, stripped[c].Item1);
+          result[r, c] = stripped[r].Item2 * stripped[c].Item2 * Dot(stripped[r].Item1, stripped[c].Item1) *(r == c ? 2 : 1);
         }
       }
       
