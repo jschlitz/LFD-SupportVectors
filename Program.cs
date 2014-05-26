@@ -25,7 +25,7 @@ namespace LFD_SupportVectors
       ////arrArr != twoD
 
       //var wTarget = new[] { GetR(), GetR() };
-      var wTarget = new[] {0, 0.2, 0.9 };
+      var wTarget = Norm( new[] {0.1, 0.2, 0.9 });
 
       var classified = Generate(TRIALS, wTarget);
       //Console.WriteLine("{0} : {1}", classified.Count(t => t.Item2 > 0), classified.Count(t => t.Item2 <= 0));
@@ -51,12 +51,19 @@ namespace LFD_SupportVectors
           {
             VariablesAtIndices = new[] { i },
             ShouldBe = ConstraintType.GreaterThanOrEqualTo,
-            Value = 0
+            Value = 0.0,
+            CombinedAs= new []{1.0} //???
           }));
       //and they zero out with the classificaiton
       lcc.Add(
-        new LinearConstraint(stripped.Select(t => t.Item2).ToArray()) { Value = 0, ShouldBe = ConstraintType.EqualTo }
-        );
+        //new LinearConstraint(stripped.Select(t => t.Item2).ToArray()) { Value = 0, ShouldBe = ConstraintType.EqualTo }
+        new LinearConstraint(stripped.Length)
+        {
+          Value = 0,
+          ShouldBe = ConstraintType.EqualTo,
+          VariablesAtIndices = Enumerable.Range(0, stripped.Length).ToArray(),
+          CombinedAs = stripped.Select(t => t.Item2).ToArray()
+        }        );
 
       var solver = new GoldfarbIdnaniQuadraticSolver(stripped.Length, lcc);
       solver.Minimize(q, neg1Array(stripped.Length));
@@ -64,16 +71,19 @@ namespace LFD_SupportVectors
 
       var tmp = solver.Solution.Zip(stripped, (alpha, s) => s.Item1.Select(x => x * alpha * s.Item2))
         .Aggregate(VAdd).ToList();
-      var offset = GetOffset(stripped[0], tmp); //I'm pretty sure this calculation for b is wrong: you get a different one for each of elements...
+      var support = solver.Solution.Zip(stripped, (alpha, s) => Math.Abs(alpha) > 0.0001 ? s : null).Where(x => x != null).ToArray();
+      var offset = GetOffset(support, tmp); //I'm pretty sure this calculation for b is wrong: you get a different one for each of elements...
       tmp.Insert(0, offset);
       var wSupp = Norm( tmp.ToArray());
 
 
     }
 
-    private static double GetOffset(Tuple<double[], double> stripped, List<double> tmp)
+    private static double GetOffset(Tuple<double[], double>[] stripped, List<double> tmp)
     {
-      return 1 / stripped.Item2 - Dot(tmp.ToArray(), stripped.Item1);
+      //these should all be the same, but they ain't dammit. Am I misunderstanding things, or are doubles this crappy in this situation?
+      var foo = stripped.Select(s => 1 / s.Item2 - Dot(tmp.ToArray(), s.Item1)).ToArray();
+      return foo.Average(); //.First();
     }
     private static double[] VAdd(IEnumerable<double> x, IEnumerable<double> y)
     {
