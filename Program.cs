@@ -10,7 +10,7 @@ namespace LFD_SupportVectors
   class Program
   {
     static Random R = new Random();
-    const int TRIALS = 1000;
+    const int TRIALS = 10;
     static void Main(string[] args)
     {
 
@@ -30,51 +30,83 @@ namespace LFD_SupportVectors
       var classified = Generate(TRIALS, wTarget);
       //Console.WriteLine("{0} : {1}", classified.Count(t => t.Item2 > 0), classified.Count(t => t.Item2 <= 0));
 
-      Console.WriteLine("{0}% wrong.", GetWithPla(wTarget, classified)*100);
+      var plas = new List<double>();
+      var svs = new List<double>();
+      double better = 0;
 
-      DoSv(classified);
-      
+      for (int i = 0; i < 1000; i++)
+      {
+        var testData = Generate(TRIALS * 10, wTarget).ToArray();
+        var pla = GetWithPla(wTarget, classified);
+        plas.Add(Wrongness(wTarget, pla, testData));
+
+        var sv = DoSv(classified);
+        svs.Add(Wrongness(wTarget, sv, testData));
+
+        if (svs.Last() > pla.Last()) 
+          better += 1.0;
+      }
+
+      Console.WriteLine("pla={0:f2}, sv={1:f2}, betterness={2}", plas.Average() * 100, svs.Average() * 100, better*100/1000);
       
       Console.ReadKey(true);
     }
 
-    private static void DoSv(Tuple<double[], double>[] classified)
+    private static double[] DoSv(Tuple<double[], double>[] classified)
     {
-      var stripped = classified.Select(t => new Tuple<double[], double>(t.Item1.Skip(1).ToArray(), t.Item2))
-        .ToArray();
-      var q = GetQ(stripped);
+      var w = new double[classified.First().Item1.Length];
+      //fuck it.
+      double w0=0;
+      double w1=0;
+      double w2=0;
+      var objective = new QuadraticObjectiveFunction(() => 0.5 * (w0 * w0) + 0.5 * (w1 * w1) + 0.5 * (w2 * w2));
 
-      //all are 0 or more
       var lcc = new LinearConstraintCollection(
-        Enumerable.Range(0, stripped.Length)
-          .Select(i => new LinearConstraint(1)
-          {
-            VariablesAtIndices = new[] { i },
-            ShouldBe = ConstraintType.GreaterThanOrEqualTo,
-            Value = 0.0,
-            CombinedAs= new []{1.0} //???
-          }));
-      //and they zero out with the classificaiton
-      lcc.Add(
-        //new LinearConstraint(stripped.Select(t => t.Item2).ToArray()) { Value = 0, ShouldBe = ConstraintType.EqualTo }
-        new LinearConstraint(stripped.Length)
-        {
-          Value = 0,
-          ShouldBe = ConstraintType.EqualTo,
-          VariablesAtIndices = Enumerable.Range(0, stripped.Length).ToArray(),
-          CombinedAs = stripped.Select(t => t.Item2).ToArray()
-        }        );
+        classified
+          .Select(item => new LinearConstraint(objective, () => item.Item2 * (item.Item1[0]*w0 + item.Item1[1]*w1 + item.Item1[2]*w2) >= 1)));
 
-      var solver = new GoldfarbIdnaniQuadraticSolver(stripped.Length, lcc);
-      solver.Minimize(q, neg1Array(stripped.Length));
-      //b  = 1/y - w_*x_ 
+      var solver = new GoldfarbIdnaniQuadraticSolver(w.Length, lcc);
+      solver.Minimize(objective);
 
-      var tmp = solver.Solution.Zip(stripped, (alpha, s) => s.Item1.Select(x => x * alpha * s.Item2))
-        .Aggregate(VAdd).ToList();
-      var support = solver.Solution.Zip(stripped, (alpha, s) => Math.Abs(alpha) > 0.0001 ? s : null).Where(x => x != null).ToArray();
-      var offset = GetOffset(support, tmp); //I'm pretty sure this calculation for b is wrong: you get a different one for each of elements...
-      tmp.Insert(0, offset);
-      var wSupp = Norm( tmp.ToArray());
+      return Norm(solver.Solution);
+
+      
+      //fuck this alpha bullshit. see if I can just feed 0.5 * dot(w,w) s.t. yn(dot(w,t) >= 1. and fuck b. leave it in w. see what fucking happens. fuck.
+      //var stripped = classified.Select(t => new Tuple<double[], double>(t.Item1.Skip(1).ToArray(), t.Item2))
+      //  .ToArray();
+      //var q = GetQ(stripped);
+
+      ////all are 0 or more
+      //var lcc = new LinearConstraintCollection(
+      //  Enumerable.Range(0, stripped.Length)
+      //    .Select(i => new LinearConstraint(1)
+      //    {
+      //      VariablesAtIndices = new[] { i },
+      //      ShouldBe = ConstraintType.GreaterThanOrEqualTo,
+      //      Value = 0.0,
+      //      CombinedAs= new []{1.0} //???
+      //    }));
+      ////and they zero out with the classificaiton
+      //lcc.Add(
+      //  //new LinearConstraint(stripped.Select(t => t.Item2).ToArray()) { Value = 0, ShouldBe = ConstraintType.EqualTo }
+      //  new LinearConstraint(stripped.Length)
+      //  {
+      //    Value = 0,
+      //    ShouldBe = ConstraintType.EqualTo,
+      //    VariablesAtIndices = Enumerable.Range(0, stripped.Length).ToArray(),
+      //    CombinedAs = stripped.Select(t => t.Item2).ToArray()
+      //  }        );
+
+      //var solver = new GoldfarbIdnaniQuadraticSolver(stripped.Length, lcc);
+      //solver.Minimize(q, neg1Array(stripped.Length));
+      ////b  = 1/y - w_*x_ 
+
+      //var tmp = solver.Solution.Zip(stripped, (alpha, s) => s.Item1.Select(x => x * alpha * s.Item2))
+      //  .Aggregate(VAdd).ToList();
+      //var support = solver.Solution.Zip(stripped, (alpha, s) => Math.Abs(alpha) > 0.0001 ? s : null).Where(x => x != null).ToArray();
+      //var offset = GetOffset(support, tmp); //I'm pretty sure this calculation for b is wrong: you get a different one for each of elements...
+      //tmp.Insert(0, offset);
+      //return Norm( tmp.ToArray());
 
 
     }
@@ -111,7 +143,7 @@ namespace LFD_SupportVectors
       return result;
     }
 
-    private static double GetWithPla(double[] wTarget, Tuple<double[], double>[] classified)
+    private static double[] GetWithPla(double[] wTarget, Tuple<double[], double>[] classified)
     {
       var wPla = DoPla(new[] { 0.0, 0.0, 0.0 }, classified);
       //Console.WriteLine();
@@ -119,11 +151,15 @@ namespace LFD_SupportVectors
       //Console.WriteLine("{0} - {1}", vToStr(wPla), vToStr(Norm(wPla)));
       wPla = Norm(wPla);
 
+      return wPla;
       //test it.
-      var testData = Generate(TRIALS * 10, wTarget).ToArray();
-      var wrong = testData.Where(t => GetY(wPla, t.Item1) != t.Item2).ToArray().Count();
-      return ((double)wrong) / testData.Length;
       //Console.WriteLine("{0}% wrong.", 100.0 * wrong / testData.Length);
+    }
+
+    private static double Wrongness(double[] wTarget, double[] guess, Tuple<double[], double>[] testData)
+    {
+      var wrong = testData.Where(t => GetY(guess, t.Item1) != t.Item2).ToArray().Count();
+      return ((double)wrong) / testData.Length;
     }
 
     private static string vToStr(double[] wPla)
