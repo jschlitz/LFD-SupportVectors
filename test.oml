@@ -1,0 +1,39 @@
+// Copyright © Microsoft Corporation.  All Rights Reserved.
+// This code released under the terms of the 
+// Microsoft Public License (MS-PL, http://opensource.org/licenses/ms-pl.html.)
+
+Model[
+  Parameters[
+    Reals,
+    X10=-0.207865, X20=-0.305687, Y0=-1.0,
+    X11=-0.374524, X21=-0.356105, Y1=-1.0,
+    X12=0.282366, X22=0.013733, Y2=1.0,
+    X13=-0.273121, X23=-0.551854, Y3=-1.0,
+    X14=-0.282821, X24=-0.616565, Y4=-1.0,
+    X15=0.623732, X25=0.761138, Y5=1.0,
+    X16=0.383996, X26=-0.866298, Y6=-1.0,
+    X17=0.035357, X27=-0.026387, Y7=1.0,
+    X18=0.119179, X28=0.757442, Y8=1.0,
+    X19=0.047487, X29=-0.740588, Y9=-1.0
+],
+  Decisions[
+    Reals,
+    W0, W1, W2
+  ],
+  Goals[
+    Minimize[ OBJxFUNC -> 0.5 + 0.5*W1*W1 + 0.5*W2*W2 ]
+  ],
+  Constraints[
+    R0 -> Y0 * (W0 + X10*W1 + X20*W2) >= 1.0,
+    R1 -> Y1 * (W0 + X11*W1 + X21*W2) >= 1.0,
+    R2 -> Y2 * (W0 + X12*W1 + X22*W2) >= 1.0,
+    R3 -> Y3 * (W0 + X13*W1 + X23*W2) >= 1.0,
+    R4 -> Y4 * (W0 + X14*W1 + X24*W2) >= 1.0,
+    R5 -> Y5 * (W0 + X15*W1 + X25*W2) >= 1.0,
+    R6 -> Y6 * (W0 + X16*W1 + X26*W2) >= 1.0,
+    R7 -> Y7 * (W0 + X17*W1 + X27*W2) >= 1.0,
+    R8 -> Y8 * (W0 + X18*W1 + X28*W2) >= 1.0,
+    R9 -> Y9 * (W0 + X19*W1 + X29*W2) >= 1.0
+  ]
+]
+

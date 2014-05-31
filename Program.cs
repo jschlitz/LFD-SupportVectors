@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Accord.Math.Optimization;
 
 namespace LFD_SupportVectors
 {
@@ -34,14 +33,19 @@ namespace LFD_SupportVectors
       var svs = new List<double>();
       double better = 0;
 
+      var s = string.Join(",\r", classified.Select(
+        (t, i) =>
+//          string.Format("    X1{0}={1:f6}, X2{0}={2:f6}, Y{0}={3:f1}", i, t.Item1[1], t.Item1[2], t.Item2)));
+          string.Format("    R{0} -> {3:f6} * (W0 + {1:f6}*W1 + {2:f6}*W2) >= 1.0", i, t.Item1[1], t.Item1[2], t.Item2)));
+
       for (int i = 0; i < 1000; i++)
       {
         var testData = Generate(TRIALS * 10, wTarget).ToArray();
         var pla = GetWithPla(wTarget, classified);
         plas.Add(Wrongness(wTarget, pla, testData));
 
-        var sv = DoSv(classified);
-        svs.Add(Wrongness(wTarget, sv, testData));
+        //var sv = DoSv(classified);
+        //svs.Add(Wrongness(wTarget, sv, testData));
 
         if (svs.Last() > pla.Last()) 
           better += 1.0;
@@ -54,21 +58,23 @@ namespace LFD_SupportVectors
 
     private static double[] DoSv(Tuple<double[], double>[] classified)
     {
-      var w = new double[classified.First().Item1.Length];
-      //fuck it.
-      double w0=0;
-      double w1=0;
-      double w2=0;
-      var objective = new QuadraticObjectiveFunction(() => 0.5 * (w0 * w0) + 0.5 * (w1 * w1) + 0.5 * (w2 * w2));
+      return null;
+      //nOPE.
+      //var w = new double[classified.First().Item1.Length];
+      ////fuck it.
+      //double w0=0;
+      //double w1=0;
+      //double w2=0;
+      //var objective = new QuadraticObjectiveFunction(() => 0.5 * (w0 * w0) + 0.5 * (w1 * w1) + 0.5 * (w2 * w2));
 
-      var lcc = new LinearConstraintCollection(
-        classified
-          .Select(item => new LinearConstraint(objective, () => item.Item2 * (item.Item1[0]*w0 + item.Item1[1]*w1 + item.Item1[2]*w2) >= 1)));
+      //var lcc = new LinearConstraintCollection(
+      //  classified
+      //    .Select(item => new LinearConstraint(objective, () => item.Item2 * (item.Item1[0]*w0 + item.Item1[1]*w1 + item.Item1[2]*w2) >= 1)));
 
-      var solver = new GoldfarbIdnaniQuadraticSolver(w.Length, lcc);
-      solver.Minimize(objective);
+      //var solver = new GoldfarbIdnaniQuadraticSolver(w.Length, lcc);
+      //solver.Minimize(objective);
 
-      return Norm(solver.Solution);
+      //return Norm(solver.Solution);
 
       
       //fuck this alpha bullshit. see if I can just feed 0.5 * dot(w,w) s.t. yn(dot(w,t) >= 1. and fuck b. leave it in w. see what fucking happens. fuck.

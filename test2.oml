@@ -1,0 +1,26 @@
+// Copyright © Microsoft Corporation.  All Rights Reserved.
+// This code released under the terms of the 
+// Microsoft Public License (MS-PL, http://opensource.org/licenses/ms-pl.html.)
+
+Model[
+  Decisions[
+    Reals,
+    W0, W1, W2
+  ],
+  Goals[
+    Minimize[ OBJxFUNC -> 0.5 + 0.5*W1*W1 + 0.5*W2*W2 ]
+  ],
+  Constraints[
+    R0 -> -1.000000 * (W0 - 0.243044*W1 - 0.678714*W2) >= 1.0,
+    R1 -> -1.000000 * (W0 + 0.690143*W1 - 0.534921*W2) >= 1.0,
+    R2 -> 1.000000 * (W0 + 0.674723*W1 + 0.831948*W2) >= 1.0,
+    R3 -> -1.000000 * (W0 - 0.887092*W1 + 0.079283*W2) >= 1.0,
+    R4 -> -1.000000 * (W0 + 0.909850*W1 - 0.427897*W2) >= 1.0,
+    R5 -> 1.000000 * (W0 - 0.357123*W1 + 0.085013*W2) >= 1.0,
+    R6 -> 1.000000 * (W0 + 0.842992*W1 + 0.795880*W2) >= 1.0,
+    R7 -> 1.000000 * (W0 + 0.931106*W1 + 0.787058*W2) >= 1.0,
+    R8 -> 1.000000 * (W0 + 0.333565*W1 + 0.969998*W2) >= 1.0,
+    R9 -> 1.000000 * (W0 - 0.893644*W1 + 0.354697*W2) >= 1.0
+  ]
+]
+
