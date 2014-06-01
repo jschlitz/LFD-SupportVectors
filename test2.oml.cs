@@ -40,22 +40,22 @@ namespace OmlExport {
             this.w2 = new Decision(Domain.Real, "W2");
             this.model.AddDecision(this.w2);
             // Add Constraint for R0
-            this.model.AddConstraint("R0", ((-1D * Model.Sum(this.w0, Model.Negate((0.243044D * this.w1)), Model.Negate((0.678714D * this.w2)))) 
+            this.model.AddConstraint("R0", ((-1D * Model.Sum(this.w0, (-0.243044D * this.w1), (-0.678714D * this.w2))) 
                             >= 1D));
             // Add Constraint for R1
-            this.model.AddConstraint("R1", ((-1D * Model.Sum(this.w0, (0.690143D * this.w1), Model.Negate((0.534921D * this.w2)))) 
+            this.model.AddConstraint("R1", ((-1D * Model.Sum(this.w0, (0.690143D * this.w1), (-0.534921D * this.w2))) 
                             >= 1D));
             // Add Constraint for R2
             this.model.AddConstraint("R2", ((1D * Model.Sum(this.w0, (0.674723D * this.w1), (0.831948D * this.w2))) 
                             >= 1D));
             // Add Constraint for R3
-            this.model.AddConstraint("R3", ((-1D * Model.Sum(this.w0, Model.Negate((0.887092D * this.w1)), (0.079283D * this.w2))) 
+            this.model.AddConstraint("R3", ((-1D * Model.Sum(this.w0, (-0.887092D * this.w1), (0.079283D * this.w2))) 
                             >= 1D));
             // Add Constraint for R4
-            this.model.AddConstraint("R4", ((-1D * Model.Sum(this.w0, (0.90985D * this.w1), Model.Negate((0.427897D * this.w2)))) 
+            this.model.AddConstraint("R4", ((-1D * Model.Sum(this.w0, (0.90985D * this.w1), (-0.427897D * this.w2))) 
                             >= 1D));
             // Add Constraint for R5
-            this.model.AddConstraint("R5", ((1D * Model.Sum(this.w0, Model.Negate((0.357123D * this.w1)), (0.085013D * this.w2))) 
+            this.model.AddConstraint("R5", ((1D * Model.Sum(this.w0, (-0.357123D * this.w1), (0.085013D * this.w2))) 
                             >= 1D));
             // Add Constraint for R6
             this.model.AddConstraint("R6", ((1D * Model.Sum(this.w0, (0.842992D * this.w1), (0.79588D * this.w2))) 
@@ -67,7 +67,7 @@ namespace OmlExport {
             this.model.AddConstraint("R8", ((1D * Model.Sum(this.w0, (0.333565D * this.w1), (0.969998D * this.w2))) 
                             >= 1D));
             // Add Constraint for R9
-            this.model.AddConstraint("R9", ((1D * Model.Sum(this.w0, Model.Negate((0.893644D * this.w1)), (0.354697D * this.w2))) 
+            this.model.AddConstraint("R9", ((1D * Model.Sum(this.w0, (-0.893644D * this.w1), (0.354697D * this.w2))) 
                             >= 1D));
             // Add Goal for OBJxFUNC
             this.model.AddGoal("OBJxFUNC", GoalKind.Minimize, Model.Sum(0.5D, Model.Product(0.5D, this.w1, this.w1), Model.Product(0.5D, this.w2, this.w2)));
