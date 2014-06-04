@@ -18,6 +18,7 @@ namespace LFD_SupportVectors
         throw new ArgumentException("All input data vectors have to be the same length.", "classified");
 
       _Context = SolverContext.GetContext();
+      _Context.ClearModel();
       _Model = _Context.CreateModel();
       _Model.Name = "SupportThatVector";
 
@@ -34,10 +35,10 @@ namespace LFD_SupportVectors
 	    {
         var item = classified[i];
         var sb = new StringBuilder();
-        sb.AppendFormat("R{0} -> {1} * (W0 ", i, item.Item2, item.Item1[0]);
+        sb.AppendFormat("{1} * (W0 ", i, item.Item2, item.Item1[0]);
         for (int j = 1; j < item.Item1.Length; j++)
         {
-          sb.AppendFormat("+ ({0}*W{j})", item.Item1[j]);
+          sb.AppendFormat("+ ({0}*W{1})", item.Item1[j],j);
         }
         sb.Append(") >= 1.0");
         _Model.AddConstraint("R"+i, sb.ToString());
@@ -56,6 +57,6 @@ namespace LFD_SupportVectors
 
     public Decision[] Weights;
     private SolverContext _Context;
-    private Model _Model;
+    public Model _Model;
   }
 }

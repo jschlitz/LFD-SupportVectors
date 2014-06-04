@@ -9,7 +9,7 @@ namespace LFD_SupportVectors
   class Program
   {
     static Random R = new Random();
-    const int TRIALS = 10;
+    const int TRIALS = 100;
     static void Main(string[] args)
     {
 
@@ -38,82 +38,36 @@ namespace LFD_SupportVectors
 //          string.Format("    X1{0}={1:f6}, X2{0}={2:f6}, Y{0}={3:f1}", i, t.Item1[1], t.Item1[2], t.Item2)));
           string.Format("    R{0} -> {3:f6} * (W0 + {1:f6}*W1 + {2:f6}*W2) >= 1.0", i, t.Item1[1], t.Item1[2], t.Item2)));
 
+      var svCount = 0;
       for (int i = 0; i < 1000; i++)
       {
         var testData = Generate(TRIALS * 10, wTarget).ToArray();
         var pla = GetWithPla(wTarget, classified);
         plas.Add(Wrongness(wTarget, pla, testData));
 
-        //var sv = DoSv(classified);
-        //svs.Add(Wrongness(wTarget, sv, testData));
+        var sv = DoSv(classified);
+        svs.Add(Wrongness(wTarget, sv, testData));
+        var xw  = classified.Select(t => t.Item2 * Dot(t.Item1, sv)).ToArray();
+        var tmp = xw.Min(x=>Math.Abs(x));
+        svCount += xw.Count(x => (x / tmp) - 1.0 <0.001);
 
-        if (svs.Last() > pla.Last()) 
+
+        if (svs.Last() < pla.Last()) 
           better += 1.0;
       }
 
-      Console.WriteLine("pla={0:f2}, sv={1:f2}, betterness={2}", plas.Average() * 100, svs.Average() * 100, better*100/1000);
+      Console.WriteLine("pla={0:f2}, sv={1:f2}, betterness={2}, svCount={3}", plas.Average() * 100, svs.Average() * 100, better, ((double)svCount) /1000.0);
       
       Console.ReadKey(true);
     }
 
     private static double[] DoSv(Tuple<double[], double>[] classified)
     {
-      return null;
-      //nOPE.
-      //var w = new double[classified.First().Item1.Length];
-      ////fuck it.
-      //double w0=0;
-      //double w1=0;
-      //double w2=0;
-      //var objective = new QuadraticObjectiveFunction(() => 0.5 * (w0 * w0) + 0.5 * (w1 * w1) + 0.5 * (w2 * w2));
+      var sv = new SvModel(classified);
+      sv.Solve();
+      var wVec = Norm(sv.Weights.Select(d => d.ToDouble()).ToArray());
 
-      //var lcc = new LinearConstraintCollection(
-      //  classified
-      //    .Select(item => new LinearConstraint(objective, () => item.Item2 * (item.Item1[0]*w0 + item.Item1[1]*w1 + item.Item1[2]*w2) >= 1)));
-
-      //var solver = new GoldfarbIdnaniQuadraticSolver(w.Length, lcc);
-      //solver.Minimize(objective);
-
-      //return Norm(solver.Solution);
-
-      
-      //fuck this alpha bullshit. see if I can just feed 0.5 * dot(w,w) s.t. yn(dot(w,t) >= 1. and fuck b. leave it in w. see what fucking happens. fuck.
-      //var stripped = classified.Select(t => new Tuple<double[], double>(t.Item1.Skip(1).ToArray(), t.Item2))
-      //  .ToArray();
-      //var q = GetQ(stripped);
-
-      ////all are 0 or more
-      //var lcc = new LinearConstraintCollection(
-      //  Enumerable.Range(0, stripped.Length)
-      //    .Select(i => new LinearConstraint(1)
-      //    {
-      //      VariablesAtIndices = new[] { i },
-      //      ShouldBe = ConstraintType.GreaterThanOrEqualTo,
-      //      Value = 0.0,
-      //      CombinedAs= new []{1.0} //???
-      //    }));
-      ////and they zero out with the classificaiton
-      //lcc.Add(
-      //  //new LinearConstraint(stripped.Select(t => t.Item2).ToArray()) { Value = 0, ShouldBe = ConstraintType.EqualTo }
-      //  new LinearConstraint(stripped.Length)
-      //  {
-      //    Value = 0,
-      //    ShouldBe = ConstraintType.EqualTo,
-      //    VariablesAtIndices = Enumerable.Range(0, stripped.Length).ToArray(),
-      //    CombinedAs = stripped.Select(t => t.Item2).ToArray()
-      //  }        );
-
-      //var solver = new GoldfarbIdnaniQuadraticSolver(stripped.Length, lcc);
-      //solver.Minimize(q, neg1Array(stripped.Length));
-      ////b  = 1/y - w_*x_ 
-
-      //var tmp = solver.Solution.Zip(stripped, (alpha, s) => s.Item1.Select(x => x * alpha * s.Item2))
-      //  .Aggregate(VAdd).ToList();
-      //var support = solver.Solution.Zip(stripped, (alpha, s) => Math.Abs(alpha) > 0.0001 ? s : null).Where(x => x != null).ToArray();
-      //var offset = GetOffset(support, tmp); //I'm pretty sure this calculation for b is wrong: you get a different one for each of elements...
-      //tmp.Insert(0, offset);
-      //return Norm( tmp.ToArray());
-
+      return wVec;
 
     }
 
